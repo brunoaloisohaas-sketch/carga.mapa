@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa de Carga — Transportes Elief (Coletor)</title>
+  <style>
+    :root{
+      --bg-deep: #004c6d; /* azul petróleo */
+      --accent: #FFA500; /* laranja vibrante */
+      --card-bg: #f7fbfd; /* very light */
+      --muted: #98a3a8;
+      --text: #0b2540;
+      --touch: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Helvetica Neue', Arial}
+    body{
+      background: linear-gradient(180deg,var(--bg-deep) 0%, #013a4a 100%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      padding:20px;
+      display:flex;align-items:flex-start;justify-content:center;
+    }
+
+    .app{
+      width:100%;max-width:1100px;background:rgba(255,255,255,0.05);backdrop-filter: blur(6px);border-radius:12px;padding:18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+
+    header{
+      display:flex;align-items:center;gap:16px;padding:12px;border-radius:8px;background:var(--accent);
+      color:white;margin-bottom:16px
+    }
+    header .logo{
+      width:56px;height:56px;border-radius:8px;background:#112;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px
+    }
+    header h1{font-size:18px;margin:0}
+    header p{margin:0;font-size:13px;opacity:0.95}
+
+    .top-form{
+      display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end
+    }
+    .form-card{
+      background:var(--card-bg);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);flex:1;min-width:260px
+    }
+
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input[type=text], input[type=number], textarea, select{
+      width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);font-size:14px
+    }
+    .row{display:flex;gap:12px}
+    .row .col{flex:1}
+
+    .btn{
+      display:inline-block;padding:10px 14px;border-radius:10px;border:none;font-weight:600;cursor:pointer;font-size:14px
+    }
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff}
+    .btn-danger{background:#e24d4d;color:#fff}
+
+    /* grid of lastros */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:12px}
+    .card{
+      background:var(--card-bg);padding:12px;border-radius:10px;border-left:6px solid var(--bg-deep);min-height:120px;display:flex;flex-direction:column
+    }
+    .card h3{margin:0 0 8px 0}
+    .meta{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .notas{flex:1;overflow:auto;margin-bottom:8px}
+    .nota-item{background:white;padding:8px;border-radius:6px;margin-bottom:6px;border-left:4px solid var(--accent);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+
+    .etiqueta{background:#fff;padding:10px;border-radius:6px;border:1px dashed #cfcfcf;font-size:13px}
+
+    .card .actions{display:flex;gap:8px}
+
+    footer{margin-top:14px;display:flex;gap:8px;justify-content:flex-end}
+
+    /* mobile tweaks */
+    @media (max-width:720px){
+      header{flex-direction:column;align-items:flex-start}
+      .top-form{flex-direction:column}
+      .row{flex-direction:column}
+      footer{flex-direction:column;align-items:stretch}
+    }
+
+    /* helper small */
+    .small{font-size:12px;color:var(--muted)}
+
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <header>
+      <div class="logo">LF</div>
+      <div>
+        <h1>Mapa de Carga — Transportes Elief</h1>
+        <p class="small">Abra a página no coletor ou celular. Sempre inicia limpa (sem dados salvos).</p>
+      </div>
+    </header>
+
+    <!-- Formulário para criar lastro -->
+    <div class="top-form">
+      <div class="form-card" style="flex:1;min-width:320px;">
+        <label for="container">Número do Container</label>
+        <input id="container" type="text" placeholder="Digite o número do container (ex: ABCU1234567)" autocomplete="off">
+
+        <div style="height:8px"></div>
+
+        <div class="row">
+          <div class="col">
+            <label for="lastroName">Nome/ID do Lastro</label>
+            <input id="lastroName" type="text" placeholder="Ex: Lastro 1" autocomplete="off">
+          </div>
+
+          <div style="width:140px">
+            <label for="peso">Peso total (kg)</label>
+            <input id="peso" type="number" placeholder="0" min="0">
+          </div>
+          <div class="input-group">
+  <label for="cubagem">Cubagem (m³):</label>
+  <input type="number" id="cubagem" name="cubagem" step="0.0001" placeholder="Digite a cubagem">
+</div>
+
+        </div>
+
+        <div style="height:8px"></div>
+
+        <label for="notasManual">Adicionar NFs (manual, separadas por vírgula)</label>
+        <textarea id="notasManual" rows="2" placeholder="Ex: 000123, 000124" style="resize:vertical"></textarea>
+
+      </div>
+
+      <div class="form-card" style="width:320px;display:flex;flex-direction:column;gap:8px;">
+        <label for="scannerInput">Leitura da Chave (coletor)</label>
+        <input id="scannerInput" type="text" inputmode="numeric" placeholder="Cole/escaneie chave de 44 dígitos aqui" autocomplete="off">
+        <div class="small">Quando um código de 44 dígitos for lido, o número da NF será extraído automaticamente (posições 26–34).</div>
+
+        <div style="height:6px"></div>
+        <button class="btn btn-primary" id="btn-add-nf">Adicionar NF Lida ao Lastro (pendente)</button>
+        <button class="btn btn-secondary" id="btn-focus-scanner">Focar Leitor</button>
+
+        <div style="height:6px"></div>
+        <div class="small">NFs pendentes:</div>
+        <div id="pendingList" style="min-height:26px;padding:6px;border-radius:6px;background:#fff;overflow:auto"></div>
+
+        <div style="height:6px"></div>
+        <button class="btn btn-primary" id="btn-create-lastro">Adicionar Lastro</button>
+      </div>
+    </div>
+
+    <!-- Grid de lastros -->
+    <div id="grid" class="grid" aria-live="polite"></div>
+
+    <footer>
+      <button class="btn btn-secondary" id="btn-clear-all">Limpar Tudo</button>
+      <button class="btn btn-primary" id="btn-export">Exportar JSON</button>
+    </footer>
+  </div>
+
+  <script>
+    // --- Estado em memória (não persistido) ---
+    let lastros = [];
+    let pendingNFs = []; // adicionadas via scanner antes de criar lastro
+
+    const grid = document.getElementById('grid');
+    const pendingEl = document.getElementById('pendingList');
+    const scannerInput = document.getElementById('scannerInput');
+
+    // Util: extrai número da NF a partir da chave de 44 dígitos
+    function extrairNFdaChave(chave){
+      if(!chave) return null;
+      const digits = chave.replace(/\D/g, '');
+      if(digits.length < 44) return null;
+      // posição 26 a 34 (1-indexed); em JS substring começando em 25, fim 34
+      return digits.substring(25,34);
+    }
+
+    function renderPending(){
+      pendingEl.innerHTML = pendingNFs.map(n=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-radius:6px;margin-bottom:6px;background:#f1f1f1"><span style="font-size:13px">${n}</span><button data-nf="${n}" class="btn" style="background:transparent;border:none;color:#c33">✖</button></div>`).join('') || '<span class="small">Nenhuma NF pendente</span>';
+      pendingEl.querySelectorAll('button[data-nf]').forEach(b=>b.addEventListener('click',e=>{ const nf=b.dataset.nf; pendingNFs = pendingNFs.filter(x=>x!==nf); renderPending(); }));
+    }
+
+    // eventos scanner
+    document.getElementById('btn-focus-scanner').addEventListener('click', ()=>{ scannerInput.focus(); });
+
+    // ao digitar/paste no scannerInput: se achar 44 dígitos, extrai NF e adiciona ao pending
+    scannerInput.addEventListener('input', ()=>{
+      const val = scannerInput.value.trim();
+      const nf = extrairNFdaChave(val);
+      if(nf){
+        // adiciona se não estiver
+        if(!pendingNFs.includes(nf)) pendingNFs.push(nf);
+        renderPending();
+        // limpa campo para próxima leitura
+        scannerInput.value = '';
+      }
+    });
+
+    // botão que também adiciona manualmente (caso o coletor não envie 44 dígitos)
+    document.getElementById('btn-add-nf').addEventListener('click', ()=>{
+      const val = scannerInput.value.trim();
+      const nfFromKey = extrairNFdaChave(val);
+      if(nfFromKey){
+        if(!pendingNFs.includes(nfFromKey)) pendingNFs.push(nfFromKey);
+        scannerInput.value = '';
+        renderPending();
+        return;
+      }
+      alert('Insira ou escaneie a chave de 44 dígitos no campo acima.');
+    });
+
+    // criar lastro a partir do formulário + pendingNFs + notas manuais
+    document.getElementById('btn-create-lastro').addEventListener('click', ()=>{
+      const nome = document.getElementById('lastroName').value.trim() || (`Lastro ${lastros.length+1}`);
+      const peso = parseFloat(document.getElementById('peso').value) || 0;
+      const notasManuais = document.getElementById('notasManual').value.trim();
+
+      let notas = [];
+      if(notasManuais) notas = notas.concat(notasManuais.split(',').map(s=>s.trim()).filter(Boolean));
+      notas = notas.concat(pendingNFs);
+
+      const container = document.getElementById('container').value.trim();
+
+      const novo = { id: Date.now().toString(), nome, peso, notas, container };
+      lastros.push(novo);
+      // reset form (page should start always clean when reloaded)
+      document.getElementById('lastroName').value = '';
+      document.getElementById('peso').value = '';
+      document.getElementById('notasManual').value = '';
+      pendingNFs = [];
+      renderPending();
+      renderGrid();
+    });
+
+    // renderiza grid
+    function renderGrid(){
+      grid.innerHTML = lastros.map(lastro=>{
+        const notasHtml = lastro.notas.map(n=>`<div class="nota-item"><span>${n}</span><div style=\"display:flex;gap:6px\"><button data-nf=\"${n}\" data-id=\"${lastro.id}\" class=\"btn\" style=\"background:transparent;border:none;color:#c33\">✖</button></div></div>`).join('');
+        return `<div class="card" data-id="${lastro.id}">
+          <h3>${lastro.nome}</h3>
+          <div class="meta">Container: <strong>${lastro.container || '-'}</strong> • Peso: <strong>${lastro.peso} kg</strong></div>
+          <div class="notas">${notasHtml || '<div class="small">Sem NFs</div>'}</div>
+          <div class="etiqueta"><strong>Etiqueta — ${lastro.nome}</strong><div style="font-size:13px;margin-top:6px">Qtd Notas: ${lastro.notas.length}<br> Peso: ${lastro.peso} kg</div></div>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn btn-primary" data-action="print" data-id="${lastro.id}">Gerar Etiqueta</button>
+            <button class="btn" data-action="toggle" data-id="${lastro.id}">Mostrar/Ocultar Notas</button>
+            <button class="btn" data-action="remove" data-id="${lastro.id}" style="background:#e24d4d;color:#fff">Remover</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      // adicionar eventos nos botões gerados
+      grid.querySelectorAll('button[data-action]').forEach(btn=>{
+        const act = btn.dataset.action; const id = btn.dataset.id;
+        btn.onclick = ()=>{
+          if(act==='print') imprimirEtiqueta(id);
+          if(act==='toggle') toggleNotas(id);
+          if(act==='remove') removerLastro(id);
+        }
+      });
+
+      grid.querySelectorAll('button[data-nf]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const nf = btn.dataset.nf; const id = btn.dataset.id;
+          removerNF(id, nf);
+        }
+      });
+    }
+
+    function imprimirEtiqueta(id){
+      const l = lastros.find(x=>x.id===id); if(!l) return;
+      const win = window.open('','_blank');
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta ${l.nome}</title><style>body{font-family:Arial;padding:12px} .header{background:${'#FFA500'};color:#fff;padding:8px;border-radius:4px} .body{margin-top:12px;border:1px solid #ddd;padding:8px;border-radius:4px}</style></head><body><div class="header"><h2>Transportes Elief — ${l.nome}</h2></div><div class="body"><strong>Container:</strong> ${l.container || '-'}<br><strong>Peso:</strong> ${l.peso} kg<br><strong>Qtd NFs:</strong> ${l.notas.length}<hr><div><strong>NFs:</strong><ul>${l.notas.map(n=>`<li>${n}</li>`).join('')}</ul></div></div></body></html>`;
+      win.document.write(html); win.document.close(); win.print();
+    }
+
+    function toggleNotas(id){
+      const card = document.querySelector(`.card[data-id=\"${id}\"]`);
+      if(!card) return; const notas = card.querySelector('.notas'); notas.style.display = (notas.style.display==='none'?'block':'none');
+    }
+
+    function removerLastro(id){
+      if(!confirm('Remover este lastro?')) return;
+      lastros = lastros.filter(x=>x.id!==id); renderGrid();
+    }
+
+    function removerNF(id,nf){
+      const l = lastros.find(x=>x.id===id); if(!l) return;
+      l.notas = l.notas.filter(x=>x!==nf); renderGrid();
+    }
+
+    document.getElementById('btn-export').addEventListener('click', ()=>{
+      const container = document.getElementById('container').value.trim();
+      const data = { container, lastros };
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mapa_carga_${Date.now()}.json`; a.click();
+    });
+
+    document.getElementById('btn-clear-all').addEventListener('click', ()=>{
+      if(!confirm('Limpar todos os lastros e pendentes?')) return;
+      lastros = []; pendingNFs = []; renderPending(); renderGrid(); document.getElementById('container').value = '';
+    });
+
+    // garantir que ao recarregar a página os dados não persistam — simplesmente não usamos localStorage
+    window.addEventListener('load', ()=>{ lastros = []; pendingNFs = []; renderPending(); renderGrid(); document.getElementById('container').value=''; });
+
+  </script>
+</body>
+</html>
