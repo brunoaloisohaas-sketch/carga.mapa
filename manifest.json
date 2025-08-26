@@ -1,0 +1,13 @@
+{
+  "name": "LF Transportes - Coleta",
+  "short_name": "LF Coleta",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#004c6d",
+  "theme_color": "#ffa500",
+  "description": "App de Coleta e Gestão de Notas da LF Transportes",
+  "icons": [
+    { "src": "logo-lf.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "logo-lf.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
