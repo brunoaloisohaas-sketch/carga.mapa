@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LF Transportes — App de Coleta</title>
+  <meta name="theme-color" content="#ffa500" />
+  <style>
+    :root{
+      --lf-blue:#004c6d;
+      --lf-blue-2:#0a6a95;
+      --lf-orange:#ffa500;
+      --text:#1e293b;
+      --muted:#64748b;
+      --card:#ffffff;
+      --border:#e2e8f0;
+      --bg:#f8fafc;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .app-header{
+      background: linear-gradient(90deg, var(--lf-blue), var(--lf-blue-2));
+      color:#fff;
+      padding:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      position:sticky;
+      top:0;
+      z-index:10;
+      box-shadow:0 2px 10px rgba(0,0,0,.1);
+    }
+    .brand{display:flex;gap:10px;align-items:center;}
+    .logo{width:34px;height:34px;border-radius:8px;object-fit:cover;background:#fff;}
+    .app-header h1{font-size:18px;margin:0;}
+    .badge{
+      font-size:12px;
+      background:var(--lf-orange);
+      color:#111;
+      padding:6px 10px;
+      border-radius:999px;
+    }
+
+    .container{padding:16px;max-width:1200px;margin:0 auto;}
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding:16px;
+      border-radius:14px;
+      margin-bottom:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,.06);
+      transition:transform .2s ease;
+    }
+    .card:hover{transform:translateY(-2px)}
+    .card-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+    .tab-btn{
+      padding:10px 14px;
+      border:none;
+      background:var(--lf-blue);
+      color:#fff;
+      border-radius:10px;
+      font-weight:700;
+      letter-spacing:.2px;
+      transition:.25s;
+    }
+    .tab-btn:hover{filter:brightness(1.1)}
+    .tab-btn.active{background:var(--lf-orange);color:#111}
+
+    .grid{display:grid;gap:16px}
+    .grid-2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+    label{display:flex;flex-direction:column;gap:6px;font-weight:600;color:#0f172a}
+    input,select,textarea{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:14px;
+      outline: none;
+      transition:border-color .2s, box-shadow .2s;
+      background:#fff;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--lf-blue);
+      box-shadow:0 0 0 3px rgba(0,76,109,.15);
+    }
+    textarea{resize:vertical}
+
+    button{
+      cursor:pointer;border:none;padding:10px 14px;border-radius:10px;
+      font-weight:700;transition:.2s;
+    }
+    .btn-primary{background:var(--lf-orange);color:#111}
+    .btn-primary:hover{filter:brightness(0.95)}
+    .btn-ghost{background:transparent;border:2px solid var(--lf-blue);color:var(--lf-blue)}
+    .btn-ghost:hover{background:var(--lf-blue);color:#fff}
+
+    .kpi .big{font-size:24px;font-weight:800;color:var(--lf-blue)}
+
+    .muted{color:var(--muted);font-size:12px}
+    .empty{
+      display:flex;align-items:center;justify-content:center;
+      border:2px dashed var(--border);border-radius:12px;padding:22px;color:var(--muted)
+    }
+    .eta-out{font-weight:700;margin-top:8px}
+
+    .list{display:grid;gap:8px}
+    .check-item{display:flex;gap:8px;align-items:center;font-weight:600;color:#0f172a}
+    .check-item input{width:auto}
+
+    @media (max-width: 768px){
+      .app-header h1{font-size:16px}
+      .tabs{flex-direction:column}
+      .tab-btn{width:100%;text-align:center}
+    }
+
+    #scanner-container {
+      position: relative;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    #scanner-container.active {
+      display: block;
+    }
+
+    #scanner-video {
+      display: block;
+      width: 100%;
+      max-height: 300px;
+      background: #000;
+    }
+
+    .scanner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .scanner-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      height: 200px;
+      border: 3px solid var(--lf-orange);
+      border-radius: 12px;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.3);
+      animation: scanner-pulse 2s infinite;
+    }
+
+    @keyframes scanner-pulse {
+      0% { border-color: var(--lf-orange); }
+      50% { border-color: #ffcc66; }
+      100% { border-color: var(--lf-orange); }
+    }
+
+    .scanner-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .table-resumo {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    
+    .table-resumo th, .table-resumo td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .table-resumo th {
+      background-color: var(--lf-blue);
+      color: white;
+    }
+    
+    .table-resumo tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: var(--bg);
+    }
+
+    .login-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-logo .logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--lf-blue);
+      font-weight: bold;
+      font-size: 24px;
+      margin: 0 auto 12px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .user-type-selector {
+      display: flex;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .user-type-btn {
+      flex: 1;
+      padding: 12px;
+      background: var(--border);
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .user-type-btn.active {
+      background: var(--lf-blue);
+      color: white;
+    }
+
+    .admin-panel {
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .data-table th, .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      background-color: var(--lf-blue);
+      color: white;
+    }
+
+    .data-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-controls select, .filter-controls input {
+      min-width: 150px;
+    }
+    
+    .offline-badge {
+      background: #f44336;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    
+    .online-badge {
+      background: #4caf50;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Tela de Login -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo">LF</div>
+        <h2>LF Transportes</h2>
+        <p class="muted">Faça login para continuar</p>
+        <div id="connectionStatus" class="offline-badge">Modo Offline</div>
+      </div>
+
+      <div class="user-type-selector">
+        <button type="button" class="user-type-btn active" data-user-type="motorista">Motorista</button>
+        <button type="button" class="user-type-btn" data-user-type="administrador">Administrador</button>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <label>
+          Usuário
+          <input type="text" id="loginUser" required placeholder="Digite seu usuário" />
+        </label>
+        
+        <label>
+          Senha
+          <input type="password" id="loginPassword" required placeholder="Digite sua senha" />
+        </label>
+        
+        <button type="submit" class="btn-primary" id="loginButton">Entrar</button>
+      </form>
+
+      <p class="muted" style="text-align: center; margin-top: 16px;">
+        Dica: Use "motorista"/"motorista" ou "admin"/"admin" para teste
+      </p>
+    </div>
+  </div>
+
+  <!-- Aplicação -->
+  <div id="appContainer" style="display: none;">
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo" style="display:flex;align-items:center;justify-content:center;color:var(--lf-blue);font-weight:bold">LF</div>
+        <h1>LF Transportes • App de Coleta</h1>
+      </div>
+      <div class="row">
+        <span class="badge" id="userBadge">Motorista</span>
+        <span id="appConnectionStatus" class="offline-badge">Offline</span>
+        <button class="btn-ghost" onclick="logout()" style="color: white; border-color: white;">Sair</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Navegação -->
+      <nav class="tabs" aria-label="Navegação de abas" id="mainTabs">
+        <button class="tab-btn active" data-tab="dash" id="dashTab" style="display: none;">Dashboard</button>
+        <button class="tab-btn" data-tab="check">Checklist</button>
+        <button class="tab-btn" data-tab="nf">Cadastrar NF</button>
+        <button class="tab-btn" data-tab="eta">ETA</button>
+        <button class="tab-btn" data-tab="sum">Resumo</button>
+        <button class="tab-btn" data-tab="admin" id="adminTab" style="display: none;">Admin</button>
+      </nav>
+
+      <!-- DASHBOARD -->
+      <section id="dash" class="tab card" style="display:block;">
+        <div class="card-title">
+          <h2>📊 Dashboard</h2>
+          <div class="row">
+            <label>De: <input type="date" id="filtroInicio" /></label>
+            <label>Até: <input type="date" id="filtroFim" /></label>
+            <button class="btn-primary" onclick="exportNFs()">Exportar CSV</button>
+            <button class="btn-ghost" onclick="loadNfsFromServer()">Atualizar Dados</button>
+          </div>
+        </div>
+        <div id="dashCards" class="grid grid-3"></div>
+      </section>
+
+      <!-- CHECKLIST -->
+      <section id="check" class="tab card" style="display:none;">
+        <h2>✅ Checklist</h2>
+        <div id="checklistContainer" class="list">
+          <p class="muted">Carregando checklist...</p>
+        </div>
+        <button class="btn-primary" onclick="salvarChecklist()" style="margin-top: 16px;">Salvar Checklist</button>
+      </section>
+
+      <!-- CADASTRAR NF -->
+      <section id="nf" class="tab card" style="display:none;">
+        <h2>🧾 Cadastrar Nota Fiscal</h2>
+        
+        <!-- Scanner Section -->
+        <div class="row">
+          <button class="btn-primary" id="btScannerNF" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 7V5C4 4.44772 4.44772 4 5 4H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 17V19C4 19.5523 4.44772 20 5 20H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 17H22C22.5523 17 23 17.4477 23 18V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 7H22C22.5523 7 23 6.55228 23 6V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <rect x="1" y="1" width="22" height="22" rx="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 10H16V14H8V10Z" fill="currentColor"/>
+            </svg>
+            Escanear NF
+          </button>
+        </div>
+        
+        <div id="scanner-container">
+          <div class="scanner-overlay">
+            <div class="scanner-frame"></div>
+          </div>
+          <video id="scanner-video"></video>
+          <div class="scanner-controls">
+            <button class="btn-ghost" id="btStopScanner">Parar Scanner</button>
+          </div>
+        </div>
+        
+        <div class="grid grid-2" style="margin-top:10px">
+          <div class="card">
+            <h3>Dados básicos</h3>
+            <label>Número NF <input id="nfNumero" /></label>
+            <label>Data/Hora coleta <input id="nfDataHora" type="datetime-local" /></label>
+            <label>Remetente <input id="nfRem" /></label>
+            <label>Destinatário <input id="nfDest" /></label>
+            <div class="grid grid-2">
+              <label>Volumes <input id="nfVolumes" type="number" min="0" /></label>
+              <label>Peso (kg) <input id="nfPeso" type="number" step="0.01" min="0" /></label>
+            </div>
+            <div class="grid grid-2">
+              <label>m³ <input id="nfM3" type="number" step="0.01" min="0" /></label>
+              <label>Rota
+                <select id="nfRota">
+                  <option value="">Selecione uma rota</option>
+                </select>
+              </label>
+            </div>
+            <label>Responsável <input id="nfResp" value="" readonly /></label>
+            <label>Observações <textarea id="nfObs" rows="3"></textarea></label>
+            <button class="btn-primary" id="btSalvarNF">Salvar NF</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETA -->
+      <section id="eta" class="tab card" style="display:none;">
+        <h2>⏱️ ETA</h2>
+        <div class="grid grid-3 compact-grid">
+          <label>Partida <input id="etaPartida" type="datetime-local" /></label>
+          <label>Duração (min) <input id="etaMin" type="number" min="1" /></label>
+          <div class="row">
+            <button class="btn-primary" id="btCalcETA">Calcular</button>
+            <button class="btn-ghost" id="btSalvarETA">Salvar ETA</button>
+          </div>
+        </div>
+        <p id="etaOut" class="eta-out">—</p>
+        
+        <h3>ETAs Registrados</h3>
+        <div id="etaList" class="list"></div>
+      </section>
+
+      <!-- RESUMO -->
+      <section id="sum" class="tab card" style="display:none;">
+        <h2>🧾 Resumo</h2>
+        <div class="row">
+          <button class="btn-primary" onclick="atualizarResumo()">Atualizar</button>
+        </div>
+        <div id="sumResumo"></div>
+      </section>
+
+      <!-- ADMIN PANEL -->
+      <section id="admin" class="tab card" style="display:none;">
+        <h2>👨‍💼 Painel Administrativo</h2>
+        
+        <div class="filter-controls">
+          <label>
+            Rota
+            <select id="adminFilterRota">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          
+          <label>
+            Data Início
+            <input type="date" id="adminFilterDataInicio" />
+          </label>
+          
+          <label>
+            Data Fim
+            <input type="date" id="adminFilterDataFim" />
+          </label>
+          
+          <button class="btn-primary" onclick="applyAdminFilters()">Aplicar Filtros</button>
+          <button class="btn-ghost" onclick="clearAdminFilters()">Limpar Filtros</button>
+          <button class="btn-primary" onclick="syncWithServer()" id="syncButton">Sincronizar com Servidor</button>
+        </div>
+        
+        <div class="admin-panel">
+          <h3>Relatório de NFs</h3>
+          <div id="adminReport"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONFIGURAÇÕES E VARIÁVEIS GLOBAIS =====
+    const SUPABASE_URL = "https://vqefwcpbzuhcfkrzaxic.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZWZ3Y3BienVoY2ZrcnpheGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NDY5MjAsImV4cCI6MjA3MjUyMjkyMH0.wbnbfxZuR7bRahQfBpsDDErk8vAiWQOrtnzNmyR8prU";
+
+    // Chaves para localStorage
+    const LS = { 
+      nfs: 'lf_nfs', 
+      etas: 'lf_etas',
+      checklists: 'lf_checklists',
+      user: 'lf_user',
+      userType: 'lf_user_type',
+      pendingSync: 'lf_pending_sync',
+      rotas: 'lf_rotas'
+    };
+
+    // Variáveis globais
+    let nfs = [];
+    let etas = [];
+    let checklists = [];
+    let rotas = [];
+    let scannerActive = false;
+    let videoStream = null;
+    let scanningInterval = null;
+    let currentUserType = 'motorista';
+    let currentUser = '';
+    let isOnline = false;
+    let supabase = null;
+
+    // Funções utilitárias
+    function loadLS(key, fallback) { 
+      try { 
+        return JSON.parse(localStorage.getItem(key)) ?? fallback; 
+      } catch(e) { 
+        return fallback; 
+      } 
+    }
+
+    function saveLS(key, val) { 
+      localStorage.setItem(key, JSON.stringify(val)); 
+    }
+
+    function isMobile() {
+      return /Mobi|Android/i.test(navigator.userAgent);
+    }
+
+    function isAdmin() {
+      return currentUserType === 'administrador';
+    }
+
+    function checkOnlineStatus() {
+      isOnline = navigator.onLine;
+      const statusElement = document.getElementById('connectionStatus');
+      const appStatusElement = document.getElementById('appConnectionStatus');
+      
+      if (statusElement) {
+        statusElement.textContent = isOnline ? 'Online' : 'Offline';
+        statusElement.className = isOnline ? 'online-badge' : 'offline-badge';
+      }
+      
+      if (appStatusElement) {
+        appStatusElement.textContent = isOnline ? 'Online' : 'Offline';
+        appStatusElement.className = isOnline ? 'online-badge' : 'offline-badge';
+      }
+      
+      return isOnline;
+    }
+
+    // ===== SISTEMA DE LOGIN =====
+    async function setupLogin() {
+      // Verificar status de conexão
+      checkOnlineStatus();
+      window.addEventListener('online', checkOnlineStatus);
+      window.addEventListener('offline', checkOnlineStatus);
+      
+      // Tentar inicializar Supabase apenas se estivermos online
+      if (isOnline) {
+        try {
+          // Carregar Supabase dinamicamente
+          const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+          supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+          console.log("Supabase inicializado com sucesso");
+        } catch (error) {
+          console.error("Erro ao carregar Supabase:", error);
+          isOnline = false;
+          checkOnlineStatus();
+        }
+      }
+      
+      // Verificar se já está logado
+      const savedUser = localStorage.getItem(LS.user);
+      const savedUserType = localStorage.getItem(LS.userType);
+      
+      if (savedUser && savedUserType) {
+        currentUser = savedUser;
+        currentUserType = savedUserType;
+        showApp();
+        return;
+      }
+      
+      // Configurar seletor de tipo de usuário
+      document.querySelectorAll('.user-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.user-type-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // Configurar formulário de login
+      document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const usuario = document.getElementById('loginUser').value.trim();
+        const senha = document.getElementById('loginPassword').value.trim();
+        const userType = document.querySelector('.user-type-btn.active').dataset.userType;
+        
+        const loginButton = document.getElementById('loginButton');
+        const originalText = loginButton.textContent;
+        loginButton.innerHTML = '<div class="loading"></div>';
+        loginButton.disabled = true;
+        
+        console.log("Tentando login com:", { usuario, senha, userType });
+
+        // Se estivermos online, tentar autenticar com Supabase
+        if (isOnline && supabase) {
+          try {
+            // Consulta corrigida para a estrutura da sua tabela
+            const { data, error } = await supabase
+              .from('usuarios')
+              .select('*')
+              .eq('nome', usuario)  // Ajustado para o campo 'nome' conforme seu diagrama
+              .eq('senha', senha)
+              .eq('tipo', userType)
+              .maybeSingle();
+
+            console.log("Resultado Supabase:", { data, error });
+
+            if (error) {
+              console.error('Erro do Supabase:', error);
+              // Fallback para login local em caso de erro
+              useLocalLogin(usuario, senha, userType, loginButton, originalText);
+              return;
+            }
+
+            if (!data) {
+              alert('Usuário, senha ou tipo incorretos.');
+              loginButton.textContent = originalText;
+              loginButton.disabled = false;
+              return;
+            }
+
+            // Login bem-sucedido
+            currentUser = data.nome;
+            currentUserType = data.tipo;
+
+            localStorage.setItem(LS.user, currentUser);
+            localStorage.setItem(LS.userType, currentUserType);
+
+            showApp();
+            return;
+          } catch (error) {
+            console.error('Erro na autenticação:', error);
+            // Fallback para login local em caso de erro
+            useLocalLogin(usuario, senha, userType, loginButton, originalText);
+            return;
+          }
+        }
+        
+        // Se offline ou Supabase não disponível, usar login local
+        useLocalLogin(usuario, senha, userType, loginButton, originalText);
+      });
+    }
+
+    // Login local (fallback)
+    function useLocalLogin(usuario, senha, userType, loginButton, originalText) {
+      if ((usuario === 'motorista' && senha === 'motorista' && userType === 'motorista') || 
+          (usuario === 'admin' && senha === 'admin' && userType === 'administrador')) {
+        currentUser = usuario;
+        currentUserType = userType;
+        
+        localStorage.setItem(LS.user, currentUser);
+        localStorage.setItem(LS.userType, currentUserType);
+        
+        showApp();
+      } else {
+        alert('Credenciais inválidas. Use "motorista"/"motorista" para motorista ou "admin"/"admin" para administrador.');
+        loginButton.textContent = originalText;
+        loginButton.disabled = false;
+      }
+    }
+
+    // ===== MOSTRAR APP =====
+    function showApp() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      
+      // Atualizar interface baseada no tipo de usuário
+      document.getElementById('userBadge').textContent = isAdmin() ? 'Administrador' : 'Motorista';
+      document.getElementById('nfResp').value = currentUser;
+      
+      // Controle de abas por tipo de usuário
+      const adminTab = document.getElementById('adminTab');
+      const dashTab = document.getElementById('dashTab');
+      
+      if (isAdmin()) {
+        adminTab.style.display = 'block';
+        dashTab.style.display = 'block';
+      } else {
+        // Para motoristas, esconder dashboard e admin
+        adminTab.style.display = 'none';
+        dashTab.style.display = 'none';
+        
+        // Se a aba ativa for dashboard, mudar para cadastro de NF
+        if (document.querySelector('.tab-btn.active').dataset.tab === 'dash') {
+          document.querySelector('.tab-btn[data-tab="nf"]').click();
+        }
+      }
+      
+      // Inicializar a aplicação
+      initApp();
+    }
+
+    // ===== LOGOUT =====
+    function logout() {
+      localStorage.removeItem(LS.user);
+      localStorage.removeItem(LS.userType);
+      
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      
+      // Limpar formulário de login
+      document.getElementById('loginForm').reset();
+    }
+
+    // ===== NAVEGAÇÃO =====
+    function setupNavigation() {
+      // Abas
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          
+          // Esconder todas as abas
+          document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+          
+          // Mostrar a aba selecionada
+          document.getElementById(tab).style.display = 'block';
+          
+          // Atualizar botões ativos
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          // Atualizar conteúdo específico da aba
+          if (tab === 'dash') renderDashboardCards();
+          if (tab === 'check') carregarChecklist();
+          if (tab === 'sum') atualizarResumo();
+          if (tab === 'admin') renderAdminPanel();
+          if (tab === 'eta') carregarETAs();
+        });
+      });
+    }
+
+    // ===== DASHBOARD =====
+    function renderDashboardCards() {
+      const container = document.getElementById("dashCards");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      // Modo simplificado no celular para motoristas
+      if (isMobile() && !isAdmin()) {
+        container.innerHTML = "<p class='muted'>📱 Use a aba <b>Cadastrar NF</b> para adicionar novas notas fiscais.</p>";
+        return;
+      }
+
+      if (!nfs || !nfs.length) {
+        container.innerHTML = "<div class='empty'>Nenhuma NF cadastrada ainda. Vá em <b>Cadastrar NF</b> para adicionar.</div>";
+        return;
+      }
+
+      // Agrupar por rota
+      const agrupado = {};
+      nfs.forEach(nf => {
+        const rota = nf.rota || 'Outra';
+        if (!agrupado[rota]) {
+          agrupado[rota] = {
+            qtd: 0,
+            volumes: 0,
+            peso: 0,
+            m3: 0,
+            nfs: []
+          };
+        }
+        
+        agrupado[rota].qtd += 1;
+        agrupado[rota].volumes += Number(nf.volumes || 0);
+        agrupado[rota].peso += Number(nf.peso || 0);
+        agrupado[rota].m3 += Number(nf.m3 || 0);
+        agrupado[rota].nfs.push(nf);
+      });
+
+      // Criar cards
+      for (const rota in agrupado) {
+        const dados = agrupado[rota];
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${rota}</h3>
+          <div class="kpi"><span class="big">${dados.qtd}</span> NFs</div>
+          <div class="kpi"><span class="big">${dados.volumes}</span> Volumes</div>
+          <div class="kpi"><span class="big">${dados.peso.toFixed(2)}</span> kg</div>
+          <div class="kpi"><span class="big">${dados.m3.toFixed(2)}</span> m³</div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    // ===== CARREGAR ROTAS =====
+    async function carregarRotas() {
+      // Carregar rotas do localStorage primeiro
+      rotas = loadLS(LS.rotas, []);
+      
+      const selectRota = document.getElementById('nfRota');
+      const selectFiltroRota = document.getElementById('adminFilterRota');
+      
+      // Limpar selects
+      selectRota.innerHTML = '<option value="">Selecione uma rota</option>';
+      selectFiltroRota.innerHTML = '<option value="">Todas</option>';
+      
+      // Se estiver online, tentar carregar do Supabase
+      if (isOnline && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('rotas')
+            .select('*')
+            .order('nome');
+            
+          if (!error && data) {
+            rotas = data;
+            saveLS(LS.rotas, rotas);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar rotas:', error);
+        }
+      }
+      
+      // Preencher selects com as rotas
+      rotas.forEach(rota => {
+        const option = document.createElement('option');
+        option.value = rota.nome;
+        option.textContent = rota.nome;
+        
+        selectRota.appendChild(option);
+        
+        const optionFiltro = option.cloneNode(true);
+        selectFiltroRota.appendChild(optionFiltro);
+      });
+    }
+
+    // ===== CADASTRO DE NF =====
+    async function salvarNF() {
+      const nf = {
+        numero: document.getElementById("nfNumero").value.trim(),
+        datahora: document.getElementById("nfDataHora").value,
+        remetente: document.getElementById("nfRem").value.trim(),
+        destinatario: document.getElementById("nfDest").value.trim(),
+        volumes: Number(document.getElementById("nfVolumes").value||0),
+        peso: Number(document.getElementById("nfPeso").value||0),
+        m3: Number(document.getElementById("nfM3").value||0),
+        rota: document.getElementById("nfRota").value,
+        responsavel: document.getElementById("nfResp").value.trim(),
+        observacoes: document.getElementById("nfObs").value.trim(),
+        usuario: currentUser,
+        data_registro: new Date().toISOString()
+      };
+      
+      if(!nf.numero){ 
+        alert("Informe número da NF"); 
+        return; 
+      }
+      
+      nfs.unshift(nf);
+      saveLS(LS.nfs, nfs);
+      
+      // Se estiver online, tentar sincronizar com o servidor
+      if (isOnline && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('notas_fiscais')
+            .insert([nf]);
+            
+          if (error) {
+            console.error('Erro ao salvar NF no Supabase:', error);
+            // Salvar para sincronização posterior
+            const pendingSync = loadLS(LS.pendingSync, []);
+            pendingSync.push({ tipo: 'nf', dados: nf });
+            saveLS(LS.pendingSync, pendingSync);
+          } else {
+            console.log('NF salva no Supabase:', data);
+          }
+        } catch (error) {
+          console.error('Erro ao salvar NF:', error);
+          // Salvar para sincronização posterior
+          const pendingSync = loadLS(LS.pendingSync, []);
+          pendingSync.push({ tipo: 'nf', dados: nf });
+          saveLS(LS.pendingSync, pendingSync);
+        }
+      } else {
+        // Se offline, armazenar para sincronização posterior
+        const pendingSync = loadLS(LS.pendingSync, []);
+        pendingSync.push({ tipo: 'nf', dados: nf });
+        saveLS(LS.pendingSync, pendingSync);
+      }
+      
+      renderDashboardCards();
+      atualizarResumo();
+      
+      if (isAdmin()) {
+        renderAdminPanel();
+      }
+      
+      alert("NF salva!");
+      
+      // Limpar campos
+      ["nfNumero","nfDataHora","nfRem","nfDest","nfVolumes","nfPeso","nfM3","nfObs"].forEach(id=>{
+        const el = document.getElementById(id); 
+        if (el) el.value = "";
+      });
+    }
+
+    // ===== ETA =====
+    function calcularETA() {
+      const partida = new Date(document.getElementById("etaPartida").value);
+      const minutos = Number(document.getElementById("etaMin").value);
+      
+      if(!partida.getTime() || !minutos){ 
+        alert("Preencha partida e duração"); 
+        return; 
+      }
+      
+      const chegada = new Date(partida.getTime() + minutos * 60000);
+      const chegadaStr = chegada.toLocaleString("pt-BR");
+      
+      document.getElementById("etaOut").textContent = chegadaStr;
+    }
+
+    async function salvarETA() {
+      const partida = document.getElementById("etaPartida").value;
+      const minutos = document.getElementById("etaMin").value;
+      const chegada = document.getElementById("etaOut").textContent;
+      
+      if(chegada === "—"){ 
+        alert("Calcule o ETA primeiro"); 
+        return; 
+      }
+      
+      const eta = { 
+        partida, 
+        minutos, 
+        chegada, 
+        usuario: currentUser, 
+        data: new Date().toISOString() 
+      };
+      
+      etas.unshift(eta);
+      saveLS(LS.etas, etas);
+      
+      // Se estiver online, tentar sincronizar com o servidor
+      if (isOnline && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('etas')
+            .insert([eta]);
+            
+          if (error) {
+            console.error('Erro ao salvar ETA no Supabase:', error);
+            // Salvar para sincronização posterior
+            const pendingSync = loadLS(LS.pendingSync, []);
+            pendingSync.push({ tipo: 'eta', dados: eta });
+            saveLS(LS.pendingSync, pendingSync);
+          } else {
+            console.log('ETA salvo no Supabase:', data);
+          }
+        } catch (error) {
+          console.error('Erro ao salvar ETA:', error);
+          // Salvar para sincronização posterior
+          const pendingSync = loadLS(LS.pendingSync, []);
+          pendingSync.push({ tipo: 'eta', dados: eta });
+          saveLS(LS.pendingSync, pendingSync);
+        }
+      } else {
+        // Se offline, armazenar para sincronização posterior
+        const pendingSync = loadLS(LS.pendingSync, []);
+        pendingSync.push({ tipo: 'eta', dados: eta });
+        saveLS(LS.pendingSync, pendingSync);
+      }
+      
+      alert("ETA salvo!");
+      carregarETAs();
+    }
+
+    function carregarETAs() {
+      const container = document.getElementById("etaList");
+      if (!container) return;
+      
+      if (!etas || !etas.length) {
+        container.innerHTML = "<div class='empty'>Nenhum ETA registrado ainda.</div>";
+        return;
+      }
+      
+      let html = '';
+      etas.slice(0, 10).forEach(eta => {
+        html += `
+          <div class="card">
+            <strong>${eta.usuario}</strong>: ${eta.chegada}
+            <div class="muted">Partida: ${new Date(eta.partida).toLocaleString('pt-BR')}</div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // ===== CHECKLIST =====
+    async function carregarChecklist() {
+      const container = document.getElementById("checklistContainer");
+      if (!container) return;
+      
+      container.innerHTML = "<p class='muted'>Carregando checklist...</p>";
+      
+      // Carregar checklist do localStorage primeiro
+      checklists = loadLS(LS.checklists, []);
+      
+      // Se estiver online, tentar carregar do Supabase
+      if (isOnline && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('listas_de_verificacao')
+            .select('*')
+            .order('ordem');
+            
+          if (!error && data && data.length > 0) {
+            checklists = data;
+            saveLS(LS.checklists, checklists);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar checklist:', error);
+        }
+      }
+      
+      // Se não houver checklists, usar um padrão
+      if (checklists.length === 0) {
+        checklists = [
+          { id: 1, item: "Pneus calibrados", ordem: 1 },
+          { id: 2, item: "Luzes funcionando", ordem: 2 },
+          { id: 3, item: "Lacres conferidos", ordem: 3 },
+          { id: 4, item: "Documentos em mãos", ordem: 4 }
+        ];
+        saveLS(LS.checklists, checklists);
+      }
+      
+      // Renderizar checklist
+      let html = '';
+      checklists.forEach(item => {
+        html += `
+          <label class="check-item">
+            <input type="checkbox" id="check-${item.id}" />
+            ${item.item}
+          </label>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    async function salvarChecklist() {
+      const checks = [];
+      checklists.forEach(item => {
+        const checked = document.getElementById(`check-${item.id}`).checked;
+        checks.push({
+          item: item.item,
+          verificado: checked,
+          usuario: currentUser,
+          data: new Date().toISOString()
+        });
+      });
+      
+      // Se estiver online, tentar sincronizar com o servidor
+      if (isOnline && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('checklists_realizados')
+            .insert(checks);
+            
+          if (error) {
+            console.error('Erro ao salvar checklist no Supabase:', error);
+            alert('Checklist salvo localmente. Erro ao sincronizar com o servidor.');
+          } else {
+            console.log('Checklist salvo no Supabase:', data);
+            alert('Checklist salvo e sincronizado!');
+          }
+        } catch (error) {
+          console.error('Erro ao salvar checklist:', error);
+          alert('Checklist salvo localmente. Erro ao sincronizar com o servidor.');
+        }
+      } else {
+        alert('Checklist salvo localmente. Será sincronizado quando online.');
+      }
+    }
+
+    // ===== RESUMO =====
+    function atualizarResumo() {
+      const container = document.getElementById("sumResumo");
+      if (!container) return;
+      
+      if (!nfs || !nfs.length) {
+        container.innerHTML = "<div class='empty'>Nenhuma NF cadastrada ainda.</div>";
+        return;
+      }
+      
+      // Agrupar por rota
+      const agrupado = {};
+      nfs.forEach(nf => {
+        const rota = nf.rota || 'Outra';
+        if (!agrupado[rota]) {
+          agrupado[rota] = {
+            qtd: 0,
+            volumes: 0,
+            peso: 0,
+            m3: 0
+          };
+        }
+        
+        agrupado[rota].qtd += 1;
+        agrupado[rota].volumes += Number(nf.volumes || 0);
+        agrupado[rota].peso += Number(nf.peso || 0);
+        agrupado[rota].m3 += Number(nf.m3 || 0);
+      });
+      
+      let html = '<table class="table-resumo">';
+      html += '<tr><th>Rota</th><th>NFs</th><th>Volumes</th><th>Peso (kg)</th><th>m³</th></tr>';
+      
+      for (const rota in agrupado) {
+        const dados = agrupado[rota];
+        html += `<tr>
+          <td>${rota}</td>
+          <td>${dados.qtd}</td>
+          <td>${dados.volumes}</td>
+          <td>${dados.peso.toFixed(2)}</td>
+          <td>${dados.m3.toFixed(2)}</td>
+        </tr>`;
+      }
+      
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    // ===== SCANNER =====
+    async function iniciarScanner() {
+      if (!('BarcodeDetector' in window)) {
+        alert("Seu navegador não suporta leitura de códigos de barras. Use um navegador moderno como Chrome ou Edge.");
+        return;
+      }
+      
+      try {
+        const video = document.getElementById("scanner-video");
+        const container = document.getElementById("scanner-container");
+        
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        video.srcObject = videoStream;
+        container.classList.add("active");
+        scannerActive = true;
+        
+        // Iniciar detecção de código de barras
+        const barcodeDetector = new BarcodeDetector({ formats: ['qr_code', 'ean_13', 'code_128'] });
+        
+        scanningInterval = setInterval(async () => {
+          if (!scannerActive) return;
+          
+          try {
+            const barcodes = await barcodeDetector.detect(video);
+            if (barcodes.length > 0) {
+              const barcode = barcodes[0];
+              document.getElementById("nfNumero").value = barcode.rawValue;
+              pararScanner();
+            }
+          } catch (err) {
+            console.error("Erro na detecção:", err);
+          }
+        }, 500);
+        
+      } catch (err) {
+        console.error("Erro ao acessar câmera:", err);
+        alert("Não foi possível acessar a câmera. Verifique as permissões.");
+      }
+    }
+
+    function pararScanner() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+      
+      if (scanningInterval) {
+        clearInterval(scanningInterval);
+        scanningInterval = null;
+      }
+      
+      scannerActive = false;
+      
+      const container = document.getElementById("scanner-container");
+      if (container) container.classList.remove("active");
+    }
+
+    // ===== PAINEL ADMIN =====
+    function renderAdminPanel() {
+      const container = document.getElementById("adminReport");
+      if (!container) return;
+      
+      if (!nfs || !nfs.length) {
+        container.innerHTML = "<div class='empty'>Nenhuma NF cadastrada ainda.</div>";
+        return;
+      }
+      
+      // Aplicar filtros
+      const rotaFiltro = document.getElementById("adminFilterRota").value;
+      const dataInicio = document.getElementById("adminFilterDataInicio").value;
+      const dataFim = document.getElementById("adminFilterDataFim").value;
+      
+      const nfsFiltradas = nfs.filter(nf => {
+        // Filtrar por rota
+        if (rotaFiltro && nf.rota !== rotaFiltro) return false;
+        
+        // Filtrar por data
+        if (dataInicio || dataFim) {
+          const dataNF = new Date(nf.data_registro);
+          const inicio = dataInicio ? new Date(dataInicio) : null;
+          const fim = dataFim ? new Date(dataFim + 'T23:59:59') : null;
+          
+          if (inicio && dataNF < inicio) return false;
+          if (fim && dataNF > fim) return false;
+        }
+        
+        return true;
+      });
+      
+      if (!nfsFiltradas.length) {
+        container.innerHTML = "<div class='empty'>Nenhuma NF encontrada com os filtros aplicados.</div>";
+        return;
+      }
+      
+      // Gerar relatório
+      let html = '<table class="data-table">';
+      html += '<tr><th>Número</th><th>Data/Hora</th><th>Remetente</th><th>Destinatário</th><th>Volumes</th><th>Peso</th><th>Rota</th><th>Usuário</th></tr>';
+      
+      nfsFiltradas.forEach(nf => {
+        html += `<tr>
+          <td>${nf.numero}</td>
+          <td>${new Date(nf.datahora).toLocaleString('pt-BR')}</td>
+          <td>${nf.remetente}</td>
+          <td>${nf.destinatario}</td>
+          <td>${nf.volumes}</td>
+          <td>${nf.peso} kg</td>
+          <td>${nf.rota}</td>
+          <td>${nf.usuario}</td>
+        </tr>`;
+      });
+      
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    function applyAdminFilters() {
+      renderAdminPanel();
+    }
+
+    function clearAdminFilters() {
+      document.getElementById("adminFilterRota").value = "";
+      document.getElementById("adminFilterDataInicio").value = "";
+      document.getElementById("adminFilterDataFim").value = "";
+      renderAdminPanel();
+    }
+
+    // ===== SINCRONIZAÇÃO =====
+    async function syncWithServer() {
+      if (!isOnline || !supabase) {
+        alert("Não é possível sincronizar. Verifique sua conexão com a internet.");
+        return;
+      }
+      
+      const syncButton = document.getElementById('syncButton');
+      const originalText = syncButton.textContent;
+      syncButton.innerHTML = '<div class="loading"></div> Sincronizando...';
+      syncButton.disabled = true;
+      
+      // Sincronizar itens pendentes
+      const pendingSync = loadLS(LS.pendingSync, []);
+      const successfulSyncs = [];
+      
+      for (let i = 0; i < pendingSync.length; i++) {
+        const item = pendingSync[i];
+        let success = false;
+        
+        try {
+          if (item.tipo === 'nf') {
+            const { error } = await supabase
+              .from('notas_fiscais')
+              .insert([item.dados]);
+            success = !error;
+          } else if (item.tipo === 'eta') {
+            const { error } = await supabase
+              .from('etas')
+              .insert([item.dados]);
+            success = !error;
+          }
+          
+          if (success) {
+            successfulSyncs.push(i);
+          }
+        } catch (error) {
+          console.error('Erro na sincronização:', error);
+        }
+      }
+      
+      // Remover os itens que foram sincronizados com sucesso
+      if (successfulSyncs.length > 0) {
+        const newPendingSync = pendingSync.filter((_, index) => !successfulSyncs.includes(index));
+        saveLS(LS.pendingSync, newPendingSync);
+      }
+      
+      // Recarregar dados do servidor
+      await loadNfsFromServer();
+      await carregarRotas();
+      await carregarChecklist();
+      
+      syncButton.textContent = originalText;
+      syncButton.disabled = false;
+      
+      alert(`Sincronização concluída. ${successfulSyncs.length} itens sincronizados.`);
+    }
+
+    async function loadNfsFromServer() {
+      if (!isOnline || !supabase) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('notas_fiscais')
+          .select('*')
+          .order('data_registro', { ascending: false });
+          
+        if (error) {
+          console.error('Erro ao carregar NFs do servidor:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          nfs = data;
+          saveLS(LS.nfs, nfs);
+          renderDashboardCards();
+          atualizarResumo();
+          renderAdminPanel();
+        }
+      } catch (error) {
+        console.error('Erro ao carregar NFs do servidor:', error);
+      }
+    }
+
+    // ===== EXPORTAÇÃO =====
+    function exportNFs() {
+      if (!nfs || !nfs.length) {
+        alert("Nenhuma NF para exportar");
+        return;
+      }
+      
+      let csv = "Número,Data/Hora,Remetente,Destinatário,Volumes,Peso (kg),m³,Rota,Responsável,Observações\n";
+      
+      nfs.forEach(nf => {
+        csv += `"${nf.numero}","${new Date(nf.datahora).toLocaleString('pt-BR')}","${nf.remetente}","${nf.destinatario}",${nf.volumes},${nf.peso},${nf.m3},"${nf.rota}","${nf.responsavel}","${nf.observacoes}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `nfs_lf_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ===== INICIALIZAÇÃO =====
+    function initApp() {
+      // Carregar dados
+      nfs = loadLS(LS.nfs, []);
+      etas = loadLS(LS.etas, []);
+      
+      // Configurar navegação
+      setupNavigation();
+      
+      // Configurar eventos
+      document.getElementById("btSalvarNF").addEventListener("click", salvarNF);
+      document.getElementById("btCalcETA").addEventListener("click", calcularETA);
+      document.getElementById("btSalvarETA").addEventListener("click", salvarETA);
+      document.getElementById("btScannerNF").addEventListener("click", iniciarScanner);
+      document.getElementById("btStopScanner").addEventListener("click", pararScanner);
+      
+      // Configurar data/hora atual como padrão
+      const now = new Date();
+      const nowStr = now.toISOString().slice(0, 16);
+      document.getElementById("nfDataHora").value = nowStr;
+      document.getElementById("etaPartida").value = nowStr;
+      
+      // Carregar rotas
+      carregarRotas();
+      
+      // Inicializar visualizações
+      renderDashboardCards();
+      atualizarResumo();
+      carregarETAs();
+      
+      // Se estiver online, tentar carregar dados do servidor
+      if (isOnline && supabase) {
+        loadNfsFromServer();
+      }
+    }
+
+    // Inicializar quando o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', setupLogin);
+  </script>
+</body>
+</html>
